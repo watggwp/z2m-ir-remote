@@ -1,0 +1,186 @@
+<!doctype html>
+<html lang="th">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#f6f7f9">
+  <title>IR Remote</title>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Crect x='6' y='2' width='12' height='20' rx='4' fill='%230f766e'/%3E%3Ccircle cx='12' cy='7' r='2' fill='white'/%3E%3C/svg%3E">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Thai:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand">
+      <span class="brand-mark" aria-hidden="true"><svg viewBox="0 0 24 24"><rect x="6" y="2" width="12" height="20" rx="4"/><circle cx="12" cy="7" r="2"/></svg></span>
+      <div>
+        <div class="brand-name">IR Remote</div>
+        <div class="brand-sub">ZS06 · Zigbee2MQTT</div>
+      </div>
+    </div>
+    <div class="topbar-actions">
+      <button class="status-pill" id="mqttPill" type="button" title="สถานะการเชื่อมต่อ MQTT (คลิกเพื่อตั้งค่า)">
+        <span class="dot"></span><span class="label">กำลังโหลด</span>
+      </button>
+      <button class="icon-btn" id="settingsBtn" type="button" title="ตั้งค่า / Settings" aria-label="ตั้งค่า">
+        <svg viewBox="0 0 24 24"><path d="M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6Z"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1Z"/></svg>
+      </button>
+    </div>
+  </header>
+
+  <div class="layout">
+    <aside class="sidebar">
+      <section class="card">
+        <div class="card-head">
+          <h2>รีโมทของฉัน <small>Remotes</small></h2>
+          <button class="btn btn-sm btn-primary" id="addRemoteBtn" type="button">+ เพิ่ม</button>
+        </div>
+        <nav class="remote-list" id="remoteList" aria-label="รายการรีโมท"></nav>
+      </section>
+      <section class="card device-card">
+        <div class="card-head">
+          <h2>อุปกรณ์ IR <small>Devices</small></h2>
+        </div>
+        <ul class="device-list" id="deviceList"></ul>
+      </section>
+    </aside>
+
+    <main class="main" id="main"></main>
+
+    <aside class="history card" id="historyPanel">
+      <div class="card-head">
+        <h2>ประวัติ <small>History</small></h2>
+        <div class="head-actions">
+          <a class="btn btn-sm btn-ghost" href="/api/history.csv" title="ดาวน์โหลดเป็น CSV เปิดด้วย Excel ได้">CSV</a>
+          <button class="btn btn-sm btn-ghost" id="clearHistoryBtn" type="button" title="ล้างประวัติทั้งหมด">ล้าง</button>
+        </div>
+      </div>
+      <div class="stats" id="stats"></div>
+      <div class="segmented" role="tablist" id="historyFilter">
+        <button type="button" data-filter="all" class="active">ทั้งหมด</button>
+        <button type="button" data-filter="remote">รีโมทนี้</button>
+        <button type="button" data-filter="learn">การเรียนรู้</button>
+      </div>
+      <ol class="history-list" id="historyList"></ol>
+    </aside>
+  </div>
+
+  <!-- Remote create/edit -->
+  <dialog id="remoteDialog" closedby="any" aria-labelledby="remoteDialogTitle">
+    <form method="dialog" class="dialog-body" id="remoteForm">
+      <h3 id="remoteDialogTitle">เพิ่มรีโมท</h3>
+      <label class="field">
+        <span>ชื่อรีโมท <small>Name</small></span>
+        <input name="name" required maxlength="80" placeholder="เช่น แอร์ห้องนอน, ทีวีห้องนั่งเล่น" autocomplete="off">
+      </label>
+      <label class="field">
+        <span>อุปกรณ์ ZS06 ที่ใช้ส่ง <small>IR blaster</small></span>
+        <select name="device"></select>
+        <em class="hint">ระบบค้นหาอุปกรณ์ที่รองรับ IR จาก Zigbee2MQTT ให้อัตโนมัติ</em>
+      </label>
+      <div class="field">
+        <span>ไอคอน <small>Icon</small></span>
+        <div class="choice-row" id="remoteIconChoices"></div>
+      </div>
+      <div class="field" id="presetField">
+        <span>เริ่มจากแม่แบบ <small>Preset buttons</small></span>
+        <div class="preset-row" id="presetChoices"></div>
+        <em class="hint">สร้างปุ่มพื้นฐานไว้ให้ แล้วค่อยกด "เรียนรู้" ทีละปุ่ม</em>
+      </div>
+      <div class="dialog-actions">
+        <button class="btn btn-ghost" value="cancel" formnovalidate type="submit">ยกเลิก</button>
+        <button class="btn btn-primary" value="ok" type="submit">บันทึก</button>
+      </div>
+    </form>
+  </dialog>
+
+  <!-- Button create/edit -->
+  <dialog id="buttonDialog" closedby="any" aria-labelledby="buttonDialogTitle">
+    <form method="dialog" class="dialog-body" id="buttonForm">
+      <h3 id="buttonDialogTitle">เพิ่มปุ่ม</h3>
+      <div class="button-preview" id="buttonPreview"></div>
+      <label class="field">
+        <span>ชื่อปุ่ม <small>Label</small></span>
+        <input name="name" required maxlength="40" placeholder="เช่น เปิด/ปิด, เพิ่มเสียง" autocomplete="off">
+      </label>
+      <div class="field">
+        <span>ไอคอน <small>Icon</small></span>
+        <div class="choice-row icons" id="buttonIconChoices"></div>
+      </div>
+      <div class="field">
+        <span>สี <small>Color</small></span>
+        <div class="choice-row" id="colorChoices"></div>
+      </div>
+      <details class="advanced">
+        <summary>โค้ด IR (ขั้นสูง) <small>Raw code</small></summary>
+        <label class="field">
+          <textarea name="code" rows="4" spellcheck="false" placeholder="วางโค้ด IR (base64) ที่มีอยู่แล้ว หรือเว้นว่างแล้วกด เรียนรู้"></textarea>
+          <em class="hint">ปกติไม่ต้องกรอก ระบบจะเติมให้เองหลังกด "เรียนรู้"</em>
+        </label>
+      </details>
+      <div class="dialog-actions">
+        <button class="btn btn-danger-ghost" id="deleteButtonBtn" type="button">ลบปุ่ม</button>
+        <span class="spacer"></span>
+        <button class="btn btn-ghost" value="cancel" formnovalidate type="submit">ยกเลิก</button>
+        <button class="btn btn-primary" value="ok" type="submit">บันทึก</button>
+        <button class="btn btn-accent" value="learn" type="submit" id="saveLearnBtn">บันทึกและเรียนรู้</button>
+      </div>
+    </form>
+  </dialog>
+
+  <!-- Learn flow -->
+  <dialog id="learnDialog" aria-labelledby="learnTitle" class="learn-dialog">
+    <div class="dialog-body learn-body" id="learnBody"></div>
+  </dialog>
+
+  <!-- Settings -->
+  <dialog id="settingsDialog" closedby="any" aria-labelledby="settingsTitle">
+    <form method="dialog" class="dialog-body" id="settingsForm">
+      <h3 id="settingsTitle">ตั้งค่าการเชื่อมต่อ <small>MQTT</small></h3>
+      <label class="field">
+        <span>MQTT Broker URL</span>
+        <input name="mqttUrl" required placeholder="mqtt://192.168.1.10:1883" autocomplete="off">
+        <em class="hint">ที่อยู่ broker เดียวกับที่ Zigbee2MQTT ใช้ (เช่น Mosquitto)</em>
+      </label>
+      <div class="field-row">
+        <label class="field"><span>Username</span><input name="username" autocomplete="off"></label>
+        <label class="field"><span>Password</span><input name="password" type="password" autocomplete="new-password"></label>
+      </div>
+      <label class="field">
+        <span>Base topic</span>
+        <input name="baseTopic" placeholder="zigbee2mqtt">
+        <em class="hint">ค่าเริ่มต้นของ Zigbee2MQTT คือ zigbee2mqtt ถ้ามีหลายชุด เลือกจากรายการที่พบด้านล่าง</em>
+        <div class="preset-row" id="baseChoices"></div>
+      </label>
+      <div class="settings-extra">
+        <h4>สำรองข้อมูล <small>Backup</small></h4>
+        <div class="row-actions">
+          <a class="btn btn-ghost" href="/api/export">ส่งออกรีโมททั้งหมด (.json)</a>
+          <label class="btn btn-ghost file-btn">นำเข้าจากไฟล์<input type="file" accept="application/json,.json" id="importInput"></label>
+        </div>
+      </div>
+      <div class="dialog-actions">
+        <button class="btn btn-ghost" value="cancel" formnovalidate type="submit">ยกเลิก</button>
+        <button class="btn btn-primary" value="ok" type="submit">บันทึกและเชื่อมต่อ</button>
+      </div>
+    </form>
+  </dialog>
+
+  <!-- Confirm -->
+  <dialog id="confirmDialog" closedby="any" aria-labelledby="confirmTitle">
+    <form method="dialog" class="dialog-body narrow">
+      <h3 id="confirmTitle"></h3>
+      <p id="confirmText" class="muted"></p>
+      <div class="dialog-actions">
+        <button class="btn btn-ghost" value="cancel" type="submit">ยกเลิก</button>
+        <button class="btn btn-danger" value="ok" type="submit">ยืนยัน</button>
+      </div>
+    </form>
+  </dialog>
+
+  <div class="toast-stack" id="toasts" aria-live="polite"></div>
+  <script src="app.js" type="module"></script>
+</body>
+</html>

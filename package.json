@@ -1,0 +1,19 @@
+{
+  "name": "zs06-ir-remote",
+  "version": "1.0.0",
+  "description": "Web UI for Tuya ZS06 Zigbee IR remote via Zigbee2MQTT",
+  "main": "server.js",
+  "type": "commonjs",
+  "scripts": {
+    "start": "node server.js",
+    "demo": "node tools/simulator.js",
+    "test": "node tools/smoke-test.js"
+  },
+  "dependencies": {
+    "express": "^4.21.2",
+    "mqtt": "^5.10.4"
+  },
+  "devDependencies": {
+    "aedes": "^0.51.3"
+  }
+}
