@@ -188,7 +188,7 @@ function renderMain() {
       <div class="rh-title"><h1>${esc(remote.name)}</h1>
         <div class="rh-sub">${devBadge}<span>${remote.buttons.length} ปุ่ม${missing ? ` · รอเรียนรู้ ${missing}` : ''}</span></div></div>
       <div class="rh-actions"><button class="btn btn-ghost btn-sm" id="editRemoteBtn" type="button">${icon('edit')} แก้ไขรีโมท</button>
-      <button class="btn btn-danger-ghost btn-sm" id="deleteRemoteBtn" type="button">${icon('trash')} ลบ</button></div>
+      <button class="btn btn-danger-ghost btn-sm" id="deleteRemoteBtn" type="button">${icon('trash')} ลบห้อง/รีโมทนี้ทิ้ง</button></div>
     </div>
     <div class="toolbar">
       <label class="search"><input type="search" id="searchInput" placeholder="ค้นหาปุ่ม..." value="${esc(state.query)}" aria-label="ค้นหาปุ่ม"></label>
@@ -627,9 +627,9 @@ main.addEventListener('click', async (e) => {
   if (e.target.closest('#addButtonBtn') || e.target.closest('#addTile')) return openButtonDialog(remote);
   if (e.target.closest('#editRemoteBtn')) return openRemoteDialog(remote);
   if (e.target.closest('#deleteRemoteBtn')) {
-    if (await confirmBox(`ลบรีโมท "${remote.name}"?`, `ปุ่มทั้ง ${remote.buttons.length} ปุ่มและโค้ด IR จะถูกลบ (ประวัติยังคงอยู่)`)) {
+    if (await confirmBox(`ลบห้อง/รีโมท "${remote.name}" ทิ้ง?`, `ปุ่มทั้ง ${remote.buttons.length} ปุ่มและโค้ด IR จะถูกลบ (ประวัติยังคงอยู่)`)) {
       await api('DELETE', `/api/remotes/${remote.id}`).catch((err) => toast(err.message, 'error'));
-      toast('ลบรีโมทแล้ว');
+      toast('ลบห้อง/รีโมทแล้ว');
     }
     return;
   }
