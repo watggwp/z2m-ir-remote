@@ -20,6 +20,10 @@
         <div class="brand-sub">ZS06 · Zigbee2MQTT</div>
       </div>
     </div>
+    <nav class="view-tabs" aria-label="หน้า">
+      <a href="#" data-view="remotes">รีโมท</a>
+      <a href="#devices" data-view="devices">อุปกรณ์ <span class="tab-count" id="deviceCount"></span></a>
+    </nav>
     <div class="topbar-actions">
       <button class="status-pill" id="mqttPill" type="button" title="สถานะการเชื่อมต่อ MQTT (คลิกเพื่อตั้งค่า)">
         <span class="dot"></span><span class="label">กำลังโหลด</span>
@@ -30,7 +34,22 @@
     </div>
   </header>
 
-  <div class="layout">
+  <div class="devices-view" id="devicesView" hidden>
+    <section class="card">
+      <div class="card-head">
+        <h2>อุปกรณ์ IR <small>ZS06 · ใช้กับรีโมท</small></h2>
+      </div>
+      <ul class="device-list" id="deviceList"></ul>
+    </section>
+    <section class="card" id="sensorCard" hidden>
+      <div class="card-head">
+        <h2>เซนเซอร์ <small>Sensors · อัปเดตสด</small></h2>
+      </div>
+      <ul class="sensor-list" id="sensorList"></ul>
+    </section>
+  </div>
+
+  <div class="layout" id="remotesView">
     <aside class="sidebar">
       <section class="card">
         <div class="card-head">
@@ -38,12 +57,6 @@
           <button class="btn btn-sm btn-primary" id="addRemoteBtn" type="button">+ เพิ่ม</button>
         </div>
         <nav class="remote-list" id="remoteList" aria-label="รายการรีโมท"></nav>
-      </section>
-      <section class="card device-card">
-        <div class="card-head">
-          <h2>อุปกรณ์ IR <small>Devices</small></h2>
-        </div>
-        <ul class="device-list" id="deviceList"></ul>
       </section>
     </aside>
 

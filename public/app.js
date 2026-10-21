@@ -158,6 +158,41 @@ function lqiHtml(d) {
   return `<span class="lqi ${level}" title="${esc(title)}"><span class="lqi-bars" data-bars="${bars}"><i></i><i></i><i></i><i></i></span>${q}</span>`;
 }
 
+// ---------- render: sensors ----------
+const PRESENCE_PROPS = ['presence', 'occupancy'];
+const SENSOR_LABELS = {
+  presence: 'ตรวจพบคน', occupancy: 'ตรวจพบคน', motion_state: 'การเคลื่อนไหว', target_distance: 'ระยะเป้าหมาย',
+  illuminance: 'ความสว่าง', illuminance_lux: 'ความสว่าง', temperature: 'อุณหภูมิ', humidity: 'ความชื้น',
+  battery: 'แบตเตอรี่', contact: 'ประตู/หน้าต่างปิด', water_leak: 'น้ำรั่ว', smoke: 'ควัน',
+};
+
+function sensorValue(f, v) {
+  if (v == null) return '–';
+  if (f.type === 'binary') {
+    const on = f.valueOn !== undefined ? v === f.valueOn : v === true;
+    return PRESENCE_PROPS.includes(f.property) ? (on ? 'มีคน' : 'ไม่มีคน') : (on ? 'ใช่' : 'ไม่');
+  }
+  return f.unit ? `${v} ${f.unit}` : String(v);
+}
+
+function renderSensors() {
+  const list = state.sensors || [];
+  $('#sensorCard').hidden = !list.length;
+  $('#deviceCount').textContent = state.devices.length + list.length || '';
+  $('#sensorList').innerHTML = list.map((s) => {
+    const pf = s.features.find((f) => PRESENCE_PROPS.includes(f.property));
+    const pv = pf && s.values[pf.property];
+    const present = pf && pv != null && (pf.valueOn !== undefined ? pv === pf.valueOn : pv === true);
+    const head = pf ? `<span class="badge ${pv == null ? '' : present ? 'on' : 'off'}">${esc(sensorValue(pf, pv))}</span>` : '';
+    const rows = s.features.filter((f) => f !== pf).map((f) =>
+      `<div class="s-row"><span>${esc(SENSOR_LABELS[f.property] || f.label || f.property)}</span><b>${esc(sensorValue(f, s.values[f.property]))}</b></div>`).join('');
+    return `<li class="sensor-item ${present ? 'present' : ''}">
+      <div class="s-head"><div style="flex:1;min-width:0"><div class="dname">${esc(s.name)}</div>
+      <div class="dmeta">${esc(s.model || '')} ${lqiHtml(s)}</div></div>${head}</div>
+      ${rows ? `<div class="s-rows">${rows}</div>` : ''}</li>`;
+  }).join('');
+}
+
 function emptyDevicesHtml() {
   if (state.mqtt.status !== 'connected') return '<li class="empty-mini">เชื่อมต่อ MQTT เพื่อค้นหาอุปกรณ์</li>';
   const elsewhere = (state.instances || []).filter((i) => i.ir.length && i.base !== state.settings.baseTopic);
@@ -288,7 +323,7 @@ function renderHistory(newId) {
     <div class="stat" title="สัดส่วนคำสั่งที่ส่งถึง MQTT broker สำเร็จ"><div class="v">${rate == null ? '-' : rate + '%'}</div><div class="k">สำเร็จ</div></div>`;
 }
 
-function renderAll() { renderStatus(); renderSidebar(); renderMain(); renderHistory(); }
+function renderAll() { renderStatus(); renderSidebar(); renderSensors(); renderMain(); renderHistory(); }
 
 // ---------- actions ----------
 async function press(remote, button, tile) {
@@ -722,9 +757,10 @@ function connectEvents() {
   });
   es.addEventListener('devices', (e) => {
     state.devices = JSON.parse(e.data);
-    renderSidebar();
+    renderSidebar(); renderSensors();
     if (currentRemote() || !state.remotes.length) renderMain();
   });
+  es.addEventListener('sensors', (e) => { state.sensors = JSON.parse(e.data); renderSensors(); });
   es.addEventListener('settings', (e) => { state.settings = JSON.parse(e.data); renderStatus(); renderSidebar(); });
   es.addEventListener('instances', (e) => { state.instances = JSON.parse(e.data); renderSidebar(); });
   es.addEventListener('learn', (e) => onLearnEvent(JSON.parse(e.data)));
@@ -737,6 +773,16 @@ function connectEvents() {
   es.addEventListener('history-cleared', () => { state.history = []; renderHistory(); toast('ล้างประวัติแล้ว'); });
   es.onerror = () => { state.mqtt = { status: 'disconnected', error: 'เชื่อมต่อเซิร์ฟเวอร์ไม่ได้' }; renderStatus(); };
 }
+
+// ---------- views: #devices is its own page so the remote screen stays short ----------
+function renderView() {
+  const view = location.hash === '#devices' ? 'devices' : 'remotes';
+  $('#devicesView').hidden = view !== 'devices';
+  $('#remotesView').hidden = view !== 'remotes';
+  document.querySelectorAll('.view-tabs a').forEach((a) => a.classList.toggle('active', a.dataset.view === view));
+}
+window.addEventListener('hashchange', () => { renderView(); window.scrollTo(0, 0); });
+renderView();
 
 async function init() {
   try { state.history = await api('GET', '/api/history?limit=1000'); } catch {}

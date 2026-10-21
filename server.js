@@ -34,6 +34,7 @@ function snapshot() {
     remotes: store.db.remotes,
     mqtt: { status: bridge.status, error: bridge.error },
     devices: bridge.deviceList(),
+    sensors: bridge.sensorList(),
     instances: bridge.instanceList(),
     learning: bridge.activeLearns(),
   };
@@ -43,6 +44,7 @@ const remotesChanged = () => { store.save(); broadcast('remotes', store.db.remot
 
 bridge.on('status', (s) => broadcast('mqtt', s));
 bridge.on('devices', (d) => broadcast('devices', d));
+bridge.on('sensors', (s) => broadcast('sensors', s));
 bridge.on('instances', (i) => broadcast('instances', i));
 bridge.on('learn', (evt) => {
   const { remoteId, buttonId } = evt.meta || {};
