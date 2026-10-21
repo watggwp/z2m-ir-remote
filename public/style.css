@@ -140,6 +140,14 @@ h2, h3, h4 { margin: 0; font-weight: 600; }
 .badge { display: inline-flex; align-items: center; gap: 5px; font-size: 11px; padding: 1px 8px; border-radius: 999px; border: 1px solid var(--line); color: var(--muted); }
 .badge.on { color: var(--ok); border-color: color-mix(in srgb, var(--ok) 35%, transparent); }
 .badge.off { color: var(--danger); border-color: color-mix(in srgb, var(--danger) 35%, transparent); }
+.lqi { display: inline-flex; align-items: center; gap: 4px; font-size: 11px; color: var(--muted); font-variant-numeric: tabular-nums; cursor: help; }
+.lqi.good { color: var(--ok); } .lqi.fair { color: var(--warn); } .lqi.weak { color: var(--danger); }
+.lqi-bars { display: inline-flex; align-items: flex-end; gap: 1px; height: 10px; }
+.lqi-bars i { width: 3px; border-radius: 1px; background: currentColor; opacity: .25; }
+.lqi-bars i:nth-child(1) { height: 3px; } .lqi-bars i:nth-child(2) { height: 5px; }
+.lqi-bars i:nth-child(3) { height: 7px; } .lqi-bars i:nth-child(4) { height: 10px; }
+.lqi-bars[data-bars="1"] i:nth-child(-n+1), .lqi-bars[data-bars="2"] i:nth-child(-n+2),
+.lqi-bars[data-bars="3"] i:nth-child(-n+3), .lqi-bars[data-bars="4"] i { opacity: 1; }
 
 /* ---------- main ---------- */
 .main { min-width: 0; display: flex; flex-direction: column; gap: 16px; }

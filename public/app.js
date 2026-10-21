@@ -143,8 +143,19 @@ function renderSidebar() {
     const av = d.availability === 'online' ? '<span class="badge on">ออนไลน์</span>'
       : d.availability === 'offline' ? '<span class="badge off">ออฟไลน์</span>' : '<span class="badge">พบแล้ว</span>';
     return `<li><span class="ri-icon">${icon('learn')}</span><div style="flex:1;min-width:0">
-      <div class="dname">${esc(d.name)}</div><div class="dmeta">${esc(d.model || '')}${d.linkquality != null ? ` · LQI ${d.linkquality}` : ''}</div></div>${av}</li>`;
+      <div class="dname">${esc(d.name)}</div><div class="dmeta">${esc(d.model || '')} ${lqiHtml(d)}</div></div>${av}</li>`;
   }).join('') : emptyDevicesHtml();
+}
+
+// LQI 0-255 from Zigbee2MQTT. Thresholds are rules of thumb, not a spec.
+function lqiHtml(d) {
+  const q = d?.linkquality;
+  if (q == null) return '<span class="lqi" title="ยังไม่มีค่า LQI จะขึ้นเมื่ออุปกรณ์ส่งข้อมูลครั้งถัดไป">LQI –</span>';
+  const bars = q >= 180 ? 4 : q >= 120 ? 3 : q >= 60 ? 2 : 1;
+  const [level, label] = q >= 120 ? ['good', 'ดี'] : q >= 60 ? ['fair', 'พอใช้'] : ['weak', 'อ่อน'];
+  const seen = d.lastSeen ? ` · อัปเดต ${new Date(d.lastSeen).toLocaleTimeString('th-TH')}` : '';
+  const title = `คุณภาพสัญญาณ Zigbee (LQI 0-255): ${q} ${label}${seen}`;
+  return `<span class="lqi ${level}" title="${esc(title)}"><span class="lqi-bars" data-bars="${bars}"><i></i><i></i><i></i><i></i></span>${q}</span>`;
 }
 
 function emptyDevicesHtml() {
@@ -174,10 +185,10 @@ function renderMain() {
   if (!remote) return renderOnboarding(main);
 
   const dev = deviceOf(remote.device);
-  const devBadge = !remote.device ? '<span class="badge off">ยังไม่เลือกอุปกรณ์</span>'
+  const devBadge = (!remote.device ? '<span class="badge off">ยังไม่เลือกอุปกรณ์</span>'
     : dev?.availability === 'online' ? `<span class="badge on">${esc(remote.device)} · ออนไลน์</span>`
     : dev?.availability === 'offline' ? `<span class="badge off">${esc(remote.device)} · ออฟไลน์</span>`
-    : `<span class="badge">${esc(remote.device)}</span>`;
+    : `<span class="badge">${esc(remote.device)}</span>`) + (remote.device ? lqiHtml(dev) : '');
   const q = state.query.trim().toLowerCase();
   const buttons = remote.buttons.filter((b) => !q || b.name.toLowerCase().includes(q));
   const missing = remote.buttons.filter((b) => !b.code).length;

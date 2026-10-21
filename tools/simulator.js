@@ -28,11 +28,15 @@ function startFakeZ2M() {
       c.publish(`${BASE}/${name}/availability`, JSON.stringify({ state: 'online' }), { retain: true });
       c.publish(`${BASE}/${name}`, JSON.stringify({ linkquality: 120 + Math.floor(Math.random() * 100) }));
     }
-    c.subscribe(`${BASE}/+/set`);
+    c.subscribe([`${BASE}/+/set`, `${BASE}/+/get`]);
     console.log(`[sim] fake Zigbee2MQTT ready with: ${DEVICES.join(', ')}`);
   });
   c.on('message', (topic, payload) => {
     const name = topic.slice(BASE.length + 1, -'/set'.length);
+    if (topic.endsWith('/get')) {
+      c.publish(`${BASE}/${name}`, JSON.stringify({ learned_ir_code: lastCode[name], linkquality: 40 + Math.floor(Math.random() * 200) }));
+      return;
+    }
     let msg;
     try { msg = JSON.parse(payload); } catch { return; }
     if (msg.learn_ir_code === 'ON') {
